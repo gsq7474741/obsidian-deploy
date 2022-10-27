@@ -6,6 +6,7 @@ class BidirectionalLinksGenerator < Jekyll::Generator
 
     all_notes = site.collections['notes'].docs
     all_pages = site.pages
+    all_file = site.collections['notes'].files
 
     all_docs = all_notes + all_pages
 
@@ -57,7 +58,66 @@ class BidirectionalLinksGenerator < Jekyll::Generator
           /\[\[(#{note_title_regexp_pattern})\]\]/i,
           anchor_tag
         )
+        #
+
+        # <p><img src="/notes/images/corr_score.png" alt=""></p>
       end
+
+      all_file.each do |file_potentially_linked_to|
+        file_title_regexp_pattern = file_potentially_linked_to.name
+
+        title_from_data = file_potentially_linked_to.data['title']
+        if title_from_data
+          title_from_data = Regexp.escape(title_from_data)
+        end
+
+        img_href = "#{site.baseurl}#{file_potentially_linked_to.url}#{link_extension}"
+        img_alt = file_potentially_linked_to.basename
+
+        img_tag = "<img src=\"#{img_href}\" alt=\"#{img_alt}\">"
+
+        # <img src="/notes/images/corr_score.png" alt="">
+
+        image_name_patttern = /.+\.(png|jpg|jpeg|JPEG|bmp)/
+        # Replace double-bracketed links with label using note title
+        # [[A note about cats|this is a link to the note about cats]]
+        current_note.content.gsub!(
+          /\[\[#{file_title_regexp_pattern}\]\]/i,
+          img_tag
+        )
+
+        # Replace double-bracketed links with label using note filename
+        # [[cats|this is a link to the note about cats]]
+        # current_note.content.gsub!(
+        #   /\[\[#{title_from_data}\|(.+?)(?=\])\]\]/i,
+        #   anchor_tag
+        # )
+
+        # Replace double-bracketed links using note title
+        # [[a note about cats]]
+        # current_note.content.gsub!(
+        #   /\[\[(#{title_from_data})\]\]/i,
+        #   anchor_tag
+        # )
+
+        # Replace double-bracketed links using note filename
+        # [[cats]]
+        # current_note.content.gsub!(
+        #   /\[\[(#{file_title_regexp_pattern})\]\]/i,
+        #   anchor_tag
+        # )
+        #
+
+        # <p><img src="/notes/images/corr_score.png" alt=""></p>
+      end
+
+      # image_name_patttern = /.+\.(png|jpg|jpeg|JPEG|bmp)/
+      # # Replace double-bracketed links with label using note title
+      # # [[A note about cats|this is a link to the note about cats]]
+      # current_note.content.gsub!(
+      #   /\[\[#{image_name_patttern}\]\]/i,
+      #   img_tag
+      # )
 
       # At this point, all remaining double-bracket-wrapped words are
       # pointing to non-existing pages, so let's turn them into disabled
@@ -69,7 +129,7 @@ class BidirectionalLinksGenerator < Jekyll::Generator
             <span class='invalid-link-brackets'>[[</span>
             \\1
             <span class='invalid-link-brackets'>]]</span></span>
-        HTML
+      HTML
       )
     end
 
@@ -100,9 +160,9 @@ class BidirectionalLinksGenerator < Jekyll::Generator
     end
 
     File.write('_includes/notes_graph.json', JSON.dump({
-      edges: graph_edges,
-      nodes: graph_nodes,
-    }))
+                                                         edges: graph_edges,
+                                                         nodes: graph_nodes,
+                                                       }))
   end
 
   def note_id_from_note(note)
